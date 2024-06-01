@@ -1,0 +1,402 @@
+openapi: 3.0.3
+info:
+  title: foxwq
+  version: "0.1"
+servers:
+  - url: https://foxwq-8e6797d8dbb9.herokuapp.com/api/v1
+paths:
+  /me:
+    get:
+      description: Get info about current player
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Player'
+  /players/{id}:
+    get:
+      description: Get player info
+      parameters:
+        - name: id
+          in: path
+          description: ID of player to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Player'
+  /players/{id}/games:
+    get:
+      description: Get game records for a given player
+      parameters:
+        - name: id
+          in: path
+          description: ID of player to return game records
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+        - name: last_game_id
+          description: If provided, returns game records after this game. Useful for pagination.
+          in: query
+          schema:
+            type: integer
+            format: int64
+            example: 1234567891234567
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GameRecordMetadata'
+  /top_games:
+    get:
+      description: List the latest top games
+      parameters:
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+        - name: last_game_id
+          description: If provided, returns game records after this game. Useful for pagination.
+          in: query
+          schema:
+            type: integer
+            format: int64
+            example: 1234567891234567
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GameRecordMetadata'
+  /games/{id}:
+    get:
+      description: Get game SGF
+      parameters:
+        - name: id
+          in: path
+          description: ID of the game to return the SGF
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameRecord'
+components:
+  securitySchemes:
+    appId:
+      type: apiKey
+      in: header
+      name: X-APP-ID
+    apiKey:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+  schemas:
+    Player:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 12345678
+        nick:
+          type: string
+        name:
+          type: string
+        rank:
+          $ref: '#/components/schemas/Rank'
+        country:
+          $ref: '#/components/schemas/Country'
+        gender:
+          $ref: '#/components/schemas/Gender'
+        flair:
+          $ref: '#/components/schemas/Flair'
+        ai:
+          type: boolean
+        amateur_6d:
+          type: boolean
+        register_time:
+          type: integer
+          format: unixts
+        results:
+          $ref: '#/components/schemas/Results'
+        recent_results:
+          type: string
+          description: The most recent results encoded as a string, where + is win and - is a loss
+          example: "+++-+--+----+-"
+        status:
+          $ref: "#/components/schemas/PlayerStatus"
+    GameRecord:
+      type: object
+      properties:
+        sgf:
+          type: string
+    GameRecordMetadata:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1234567891234567
+        info:
+          type: string
+          description: Information about the game, such as the tournament or event name, if available
+        black:
+          $ref: "#/components/schemas/GameRecordPlayerInfo"
+        white:
+          $ref: "#/components/schemas/GameRecordPlayerInfo"
+        start_time:
+          type: string
+          example: "2024-03-21 16:48:12"
+        end_time:
+          type: string
+          example: "2024-03-21 16:48:12"
+        settings:
+          $ref: "#/components/schemas/GameSettings"
+        result:
+          $ref: "#/components/schemas/GameResult"
+    GameSettings:
+      type: object
+      properties:
+        board_size:
+          type: integer
+          example: 19
+        rules:
+          type: string
+          enum:
+          - JAPANESE
+          - CHINESE
+        komi:
+          type: number
+          example: 7.5
+        handicap:
+          type: integer
+    GameResult:
+      type: object
+      properties:
+        winner:
+          type: string
+          enum:
+          - NONE
+          - BLACK
+          - WHITE
+        reason:
+          type: string
+          enum:
+          - COUNT
+          - TIMEOUT
+          - RESIGN
+          - DRAW_AGREED
+          - COUNT_ERR
+          - FORCE_COUNT
+          - FORFEIT
+          - ADMIN
+          - AI_REFEREE
+          - UNKNOWN
+        score:
+          type: number
+    GameRecordPlayerInfo:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 12345678
+        nick:
+          type: string
+        name:
+          type: string
+        rank:
+          $ref: '#/components/schemas/Rank'
+        country:
+          $ref: '#/components/schemas/Country'
+        ai:
+          type: boolean
+    PlayerStatus:
+      type: object
+      properties:
+        online:
+          type: boolean
+        accepting_games:
+          type: boolean
+    Results:
+      type: object
+      properties:
+        wins:
+          type: integer
+        losses:
+          type: integer
+        draws:
+          type: integer
+    Flair:
+      type: string
+      enum:
+      - NONE
+      - PRO
+      - GOLD_CROWN
+      - TOP_AMATEUR
+      - SILVER_CROWN
+      - ELITE_AMATEUR
+    Rank:
+      type: string
+      enum:
+      - 18K
+      - 17K
+      - 16K
+      - 15K
+      - 14K
+      - 13K
+      - 12K
+      - 11K
+      - 10K
+      - 9K
+      - 8K
+      - 7K
+      - 6K
+      - 5K
+      - 4K
+      - 3K
+      - 2K
+      - 1K
+      - 1D
+      - 2D
+      - 3D
+      - 4D
+      - 5D
+      - 6D
+      - 7D
+      - 8D
+      - 9D
+      - 10D
+      - 1P
+      - 2P
+      - 3P
+      - 4P
+      - 5P
+      - 6P
+      - 7P
+      - 8P
+      - 9P
+      - 10P
+    Gender:
+      type: string
+      enum:
+      - MALE
+      - FEMALE
+    Country:
+      type: string
+      enum:
+        - ALBANIA
+        - ARGENTINA
+        - ARMENIA
+        - AUSTRALIA
+        - AUSTRIA
+        - AZERBAIJAN
+        - BELARUS
+        - BELGIUM
+        - BOSNIA_AND_HERZEGOVINA
+        - BRAZIL
+        - BRUNEI_DARUSSALAM
+        - BULGARIA
+        - CANADA
+        - CHILE
+        - CHINA
+        - COLOMBIA
+        - COSTA_RICA
+        - CROATIA
+        - CUBA
+        - CYPRUS
+        - CZECH_REPUBLIC
+        - DENMARK
+        - ECUADOR
+        - EGF
+        - EGYPT
+        - FINLAND
+        - FRANCE
+        - GEORGIA
+        - GERMANY
+        - GREECE
+        - GUATEMALA
+        - HONG_KONG
+        - HUNGARY
+        - ICELAND
+        - INDIA
+        - INDONESIA
+        - IRAN
+        - IRAQ
+        - IRELAND
+        - ISRAEL
+        - ITALY
+        - JAPAN
+        - KAZAKHSTAN
+        - LATVIA
+        - LITHUANIA
+        - LUXEMBOURG
+        - MACAO
+        - MADAGASCAR
+        - MALAYSIA
+        - MEXICO
+        - MONGOLIA
+        - MOROCCO
+        - NEPAL
+        - NETHERLANDS
+        - NEW_ZEALAND
+        - NIGERIA
+        - NORTH_KOREA
+        - NORWAY
+        - PAKISTAN
+        - PANAMA
+        - PERU
+        - PHILIPPINES
+        - POLAND
+        - PORTUGAL
+        - ROMANIA
+        - RUSSIA
+        - SAUDI_ARABIA
+        - SERBIA
+        - SINGAPORE
+        - SLOVAKIA
+        - SLOVENIA
+        - SOUTH_AFRICA
+        - SOUTH_KOREA
+        - SPAIN
+        - SWEDEN
+        - SWITZERLAND
+        - SYRIA
+        - TAIWAN
+        - THAILAND
+        - TURKEY
+        - UKRAINE
+        - UNITED_KINGDOM
+        - UNITED_STATES
+        - URUGUAY
+        - VENEZUELA
+        - VIETNAM
+security:
+  - apiKey: []
+    appId: []
